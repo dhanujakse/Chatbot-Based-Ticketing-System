@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Ticketing System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .chat-container {
+            width: 1000px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background-color: #007BFF;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+
+        .message {
+            margin: 10px 0;
+            display: flex;
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message .bubble {
+            max-width: 70%;
+            padding: 10px;
+            border-radius: 15px;
+            font-size: 14px;
+        }
+
+        .message.bot .bubble {
+            background-color: #e0e0e0;
+            color: #000;
+        }
+
+        .message.user .bubble {
+            background-color: #007BFF;
+            color: #fff;
+        }
+
+        .chat-input {
+            display: flex;
+            border-top: 1px solid #ddd;
+        }
+
+        .chat-input input {
+            flex: 1;
+            border: none;
+            padding: 15px;
+            font-size: 14px;
+        }
+
+        .chat-input button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 15px;
+            cursor: pointer;
+        }
+
+        .chat-input button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">Chatbot Ticketing System</div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input">
+            <input type="text" id="user-name" placeholder="Enter your name..." />
+            <input type="date" id="visit-date" placeholder="Select visit date..." />
+            <select id="ticket-type">
+                <option value="">Select ticket type</option>
+                <option value="General">General</option>
+                <option value="Student">Student</option>
+                <option value="VIP">VIP</option>
+            </select>
+            <button onclick="sendMessage()">Submit</button>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+
+        function appendMessage(sender, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'bubble';
+            bubbleDiv.textContent = text;
+
+            messageDiv.appendChild(bubbleDiv);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const userName = document.getElementById('user-name').value.trim();
+            const visitDate = document.getElementById('visit-date').value;
+            const ticketType = document.getElementById('ticket-type').value;
+
+            if (!userName || !visitDate || !ticketType) {
+                appendMessage('bot', 'Please fill in all the fields before submitting.');
+                return;
+            }
+
+            appendMessage('user', `Name: ${userName}, Visit Date: ${visitDate}, Ticket Type: ${ticketType}`);
+
+            try {
+                const response = await fetch('http://localhost:5000/webhook', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        queryResult: {
+                            action: 'book_ticket',
+                            parameters: {
+                                name: userName,
+                                date: visitDate,
+                                ticket_type: ticketType,
+                            },
+                        },
+                    }),
+                });
+
+                const data = await response.json();
+                appendMessage('bot', data.fulfillmentText);
+            } catch (error) {
+                appendMessage('bot', 'Error: Unable to connect to the server.');
+            }
+        }
+    </script>
+</body>
+</html>
